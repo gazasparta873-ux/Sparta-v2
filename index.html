@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hippo Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0B0B0F;color:#fff;font-family:-apple-system,sans-serif;min-height:100vh;padding:20px;padding-bottom:40px}
+.container{max-width:500px;margin:0 auto}
+.header{text-align:center;margin:20px 0 30px}
+.logo{font-size:55px}
+.title{font-size:28px;font-weight:900;letter-spacing:1px;margin-top:8px}
+.subtitle{color:#aaa;font-size:14px;margin-top:6px}
+button{width:100%;padding:17px;border:none;border-radius:14px;font-size:15px;font-weight:800;color:#fff;cursor:pointer}
+.btn-analyze{background:#C9A227;margin-top:15px}
+.btn-reset{background:transparent;color:#888;margin-top:10px}
+.btn-save{background:#2E7D32;margin-top:12px}
+button:disabled{opacity:.4}
+.photo-container{background:#15151C;border-radius:15px;padding:10px;min-height:200px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.photo-container img{max-width:48%;max-height:200px;border-radius:10px;object-fit:cover}
+.section{margin-top:30px}
+.section-title{font-size:20px;font-weight:800;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}
+.empty{color:#888;text-align:center;padding:30px}
+.horse-card{background:#17171F;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:14px;position:relative}
+.horse-card.top1{border:2px solid #FFD700;box-shadow:0 0 15px rgba(255,215,0,.4)}
+.horse-card.top2{border:2px solid #C0C0C0}
+.horse-card.top3{border:2px solid #CD7F32}
+.horse-card.top4{border:2px solid #888}
+.horse-card.top5{border:2px solid #666}
+.number-circle{width:45px;height:45px;border-radius:50%;background:#C9A227;color:#000;display:flex;justify-content:center;align-items:center;font-size:18px;font-weight:900;flex-shrink:0}
+.horse-info{flex:1}
+.horse-name{font-size:17px;font-weight:800;margin-bottom:7px}
+.info{color:#aaa;font-size:13px;margin-bottom:3px}
+.score-bar{height:6px;background:#222;border-radius:3px;overflow:hidden;margin-top:6px}
+.score-fill{height:100%;background:linear-gradient(90deg,#C9A227,#FFD700);border-radius:3px;transition:width .5s}
+.score-text{font-size:12px;color:#C9A227;font-weight:800;text-align:right;margin-top:2px}
+.rank-badge{position:absolute;top:-8px;right:-8px;background:#C9A227;color:#000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:900}
+.rank-badge.gold{background:#FFD700}
+.rank-badge.silver{background:#C0C0C0}
+.rank-badge.bronze{background:#CD7F32;color:#fff}
+.debug-toggle{background:#1A1A22;color:#C9A227;padding:12px;border-radius:10px;text-align:center;font-weight:700;cursor:pointer;font-size:13px}
+.raw-box{margin-top:10px;background:#101015;border-radius:10px;padding:12px;max-height:300px;overflow-y:auto}
+.raw-line{color:#9AE6B4;font-family:monospace;font-size:12px;margin-bottom:2px;white-space:pre-wrap;word-break:break-word}
+.footer{text-align:center;margin-top:40px}
+.footer-text{color:#C9A227;font-size:18px;font-weight:900}
+.footer-subtext{color:#666;margin-top:5px;font-size:13px}
+.loading{display:flex;align-items:center;justify-content:center;gap:10px}
+.spinner{width:18px;height:18px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{margin-top:10px;height:6px;background:#222;border-radius:3px;overflow:hidden}
+.progress-bar{height:100%;background:#C9A227;width:0%;transition:width .3s}
+input[type=file]{display:none}
+.label-import{display:block;background:#202027;padding:17px;border-radius:14px;text-align:center;cursor:pointer;font-size:15px;font-weight:800;color:#fff;margin-bottom:15px}
+.badge{background:#C9A227;color:#000;border-radius:10px;padding:2px 8px;font-size:12px;font-weight:800;margin-left:6px}
+.pronostic-box{background:linear-gradient(135deg,#1A1A22,#0F0F14);border:1px solid #C9A227;border-radius:16px;padding:20px;margin-top:10px}
+.pronostic-numbers{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pronum{width:50px;height:50px;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:20px;font-weight:900;color:#000}
+.pronum.p1{background:#FFD700;box-shadow:0 0 20px rgba(255,215,0,.7)}
+.pronum.p2{background:#C0C0C0}
+.pronum.p3{background:#CD7F32;color:#fff}
+.pronum.p4{background:#888;color:#fff}
+.pronum.p5{background:#666;color:#fff}
+.pronostic-legend{text-align:center;color:#888;font-size:11px;margin-top:10px}
+.combo{margin-top:14px;text-align:center;background:#000;border-radius:10px;padding:12px;color:#C9A227;font-family:monospace;font-size:14px;font-weight:800;letter-spacing:1px;line-height:1.8}
+.quinte-title{color:#FFD700;font-size:16px;font-weight:900;text-align:center;margin-bottom:10px}
+.complement-box{margin-top:12px;background:rgba(201,162,39,.1);border:1px dashed #C9A227;border-radius:10px;padding:12px;text-align:center}
+.complement-label{color:#C9A227;font-size:11px;font-weight:800;letter-spacing:1px}
+.complement-num{color:#FFD700;font-size:24px;font-weight:900;margin:4px 0}
+.complement-name{color:#aaa;font-size:13px}
+.histo-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.stat-box{background:#17171F;border-radius:12px;padding:14px;text-align:center}
+.stat-label{color:#888;font-size:11px;font-weight:700;letter-spacing:1px}
+.stat-value{font-size:20px;font-weight:900;margin-top:4px}
+.stat-value.pos{color:#4CAF50}
+.stat-value.neg{color:#E53935}
+.stat-value.neutral{color:#C9A227}
+.bet-item{background:#17171F;border-radius:12px;padding:14px;margin-bottom:10px}
+.bet-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.bet-date{color:#888;font-size:11px}
+.bet-nums{font-family:monospace;color:#C9A227;font-weight:900;font-size:14px;letter-spacing:1px}
+.bet-details{color:#aaa;font-size:12px;margin-top:6px}
+.bet-details b{color:#fff}
+.bet-result{font-size:14px;font-weight:900;margin-top:8px;padding-top:8px;border-top:1px solid #222}
+.btn-del{background:#E53935;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700}
+.btn-clear{background:transparent;color:#E53935;border:1px solid #E53935;padding:10px;border-radius:10px;font-size:13px;font-weight:700;margin-top:10px;width:100%;cursor:pointer}
+.input-label{color:#888;font-size:11px;font-weight:700;margin-bottom:4px;display:block}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);display:none;justify-content:center;align-items:center;padding:20px;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal{background:#17171F;border-radius:16px;padding:20px;max-width:400px;width:100%;border:1px solid #C9A227}
+.modal h3{color:#C9A227;margin-bottom:15px;text-align:center;font-size:16px}
+.modal input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#0F0F14;color:#fff;font-size:16px;font-weight:700;margin-bottom:10px}
+.btn-cancel{background:#333;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="logo">🐎</div>
+<div class="title">HIPPO ANALYTICS</div>
+<div class="subtitle">Analyse Quinté+ intelligente</div>
+</div>
+<label class="label-import">📸 IMPORTER UNE OU PLUSIEURS PHOTOS<input type="file" id="fileInput" accept="image/*" multiple></label>
+<div id="photoContainer" style="display:none" class="photo-container"></div>
+<button id="analyzeBtn" class="btn-analyze" disabled>🔎 ANALYSER LES PROGRAMMES</button>
+<div id="progressContainer" style="display:none"><div class="progress"><div id="progressBar" class="progress-bar"></div></div><div style="text-align:center;color:#888;font-size:12px;margin-top:6px" id="progressText"></div></div>
+<button id="resetBtn" class="btn-reset" style="display:none">↺ RÉINITIALISER</button>
+<div class="section" id="pronosticSection" style="display:none">
+<div class="section-title">🎯 PRONOSTIC QUINTÉ+</div>
+<div class="pronostic-box">
+<div class="quinte-title">🏆 LES 5 NUMÉROS À JOUER</div>
+<div class="pronostic-numbers" id="pronosticNumbers"></div>
+<div class="pronostic-legend" id="pronosticLegend"></div>
+<div class="complement-box"><div class="complement-label">➕ CHEVAL DE COMPLÉMENT (6e)</div><div class="complement-num" id="complementNum">-</div><div class="complement-name" id="complementName">-</div></div>
+<div class="combo" id="comboText"></div>
+<button id="saveBtn" class="btn-save">💾 ENREGISTRER CE PARI</button>
+</div>
+</div>
+<div class="section">
+<div class="section-title">🐎 CHEVAUX DÉTECTÉS <span id="countBadge" class="badge" style="display:none">0</span></div>
+<div id="horsesList"><div class="empty">Importe une ou plusieurs photos du programme pour commencer.</div></div>
+</div>
+<div class="section">
+<div class="section-title">📊 HISTORIQUE DES PARIS <span id="histoBadge" class="badge" style="display:none">0</span></div>
+<div id="histoStats" class="histo-stats" style="display:none">
+<div class="stat-box"><div class="stat-label">MISÉ</div><div class="stat-value neutral" id="statMise">0 €</div></div>
+<div class="stat-box"><div class="stat-label">GAGNÉ</div><div class="stat-value neutral" id="statGain">0 €</div></div>
+<div class="stat-box"><div class="stat-label">BÉNÉFICE</div><div class="stat-value" id="statBenef">0 €</div></div>
+<div class="stat-box"><div class="stat-label">ROI</div><div class="stat-value" id="statRoi">0%</div></div>
+</div>
+<div id="histoList"><div class="empty">Aucun pari enregistré.</div></div>
+<button id="clearHistoBtn" class="btn-clear" style="display:none">🗑️ EFFACER TOUT</button>
+</div>
+<div class="section" id="debugSection" style="display:none">
+<div class="debug-toggle" id="debugToggle">▼ VOIR LE TEXTE OCR BRUT</div>
+<div class="raw-box" id="rawBox" style="display:none"></div>
+</div>
+<div class="footer"><div class="footer-text">HIPPO ANALYTICS</div><div class="footer-subtext">Photo → OCR → Analyse → Quinté+</div></div>
+</div>
+<div class="modal-overlay" id="modal">
+<div class="modal">
+<h3>💾 ENREGISTRER LE PARI</h3>
+<div id="modalNums" style="text-align:center;font-family:monospace;color:#C9A227;font-weight:900;font-size:16px;margin-bottom:15px"></div>
+<label class="input-label">MONTANT MISÉ (€)</label>
+<input type="number" id="inputMise" placeholder="ex: 10" step="0.5" min="0">
+<label class="input-label" style="margin-top:12px">GAIN (€) — vide si perdu</label>
+<input type="number" id="inputGain" placeholder="ex: 150" step="0.5" min="0">
+<button class="btn-save" id="confirmSave">✅ CONFIRMER</button>
+<button class="btn-cancel" id="cancelSave">Annuler</button>
+</div>
+</div>
+<script>
+let currentImages=[];let currentProno=null;
+const fileInput=document.getElementById("fileInput");
+const photoContainer=document.getElementById("photoContainer");
+const analyzeBtn=document.getElementById("analyzeBtn");
+const resetBtn=document.getElementById("resetBtn");
+const horsesList=document.getElementById("horsesList");
+const countBadge=document.getElementById("countBadge");
+const debugSection=document.getElementById("debugSection");
+const debugToggle=document.getElementById("debugToggle");
+const rawBox=document.getElementById("rawBox");
+const progressContainer=document.getElementById("progressContainer");
+const progressBar=document.getElementById("progressBar");
+const progressText=document.getElementById("progressText");
+const pronosticSection=document.getElementById("pronosticSection");
+const pronosticNumbers=document.getElementById("pronosticNumbers");
+const pronosticLegend=document.getElementById("pronosticLegend");
+const comboText=document.getElementById("comboText");
+const complementNum=document.getElementById("complementNum");
+const complementName=document.getElementById("complementName");
+const saveBtn=document.getElementById("saveBtn");
+const histoBadge=document.getElementById("histoBadge");
+const histoStats=document.getElementById("histoStats");
+const histoList=document.getElementById("histoList");
+const clearHistoBtn=document.getElementById("clearHistoBtn");
+const statMise=document.getElementById("statMise");
+const statGain=document.getElementById("statGain");
+const statBenef=document.getElementById("statBenef");
+const statRoi=document.getElementById("statRoi");
+const modal=document.getElementById("modal");
+const modalNums=document.getElementById("modalNums");
+const inputMise=document.getElementById("inputMise");
+const inputGain=document.getElementById("inputGain");
+const STORAGE_KEY="hippo_bets_history";
+
+fileInput.addEventListener("change",e=>{
+const files=Array.from(e.target.files);if(files.length===0)return;
+currentImages=[];photoContainer.innerHTML="";
+let loaded=0;
+files.forEach(file=>{
+const reader=new FileReader();
+reader.onload=ev=>{
+currentImages.push({data:ev.target.result});
+const img=document.createElement("img");img.src=ev.target.result;photoContainer.appendChild(img);
+loaded++;
+if(loaded===files.length){
+photoContainer.style.display="flex";analyzeBtn.disabled=false;resetBtn.style.display="block";
+pronosticSection.style.display="none";
+horsesList.innerHTML='<div class="empty">'+files.length+' photo(s) prête(s). Clique sur ANALYSER.</div>';
+debugSection.style.display="none";
+}};
+reader.readAsDataURL(file);
+});
+});
+
+function parseHorses(lines){
+const horses=[];
+// Format complet "programme papier"
+const fullLineRegex=/^(\d{1,2})\s+([A-ZÀ-Ü][A-ZÀ-Ü'\-\s]+?)\s+(H|M|F)(\d)\s+(\d+(?:[.,]\d+)?)\s*(?:kg)?\s+(\d{1,2})\s+([\dŒØp\s]*)\s+([\d(][\d()apmDAT\s]{5,}?)\s+([A-ZÀ-Ü][\w'.\-À-Ü]+)\s+([A-ZÀ-Ü][\w'.\-À-Ü()]+)\s+(.+?)\s+([\d.]+)\s+([\d.,]+)\s*$/i;
+for(let i=0;i<lines.length;i++){
+const line=lines[i].trim();
+if(!line||line.length<20)continue;
+if(/^(Numéro|Nom du|Quarté|Quinté|MASSE|Masse|Bet261|BET261|ParisLongchamp|R1C4|Sélection|Turf-fr|Le Parisien|L'Alsace|Equidia|Turfomania|Sud Ouest)/i.test(line))continue;
+const m=line.match(fullLineRegex);
+if(m){
+horses.push({
+number:m[1],name:m[2].trim().toUpperCase(),
+sexeAge:m[3].toUpperCase()+m[4],
+poids:parseFloat(m[5].replace(",",".")),
+corde:parseInt(m[6]),
+oeilleres:m[7].trim()||"-",
+music:m[8].replace(/\s+/g,""),
+jockey:m[9],trainer:m[10],
+gains:parseFloat(m[12].replace(/\./g,""))||0,
+cote:parseFloat(m[13].replace(",","."))
+});
+}
+}
+if(horses.length>=5){return horses.sort((a,b)=>parseInt(a.number)-parseInt(b.number));}
+
+// Format mobile Bet261
+horses.length=0;
+let pendingName=null;
+for(let i=0;i<lines.length;i++){
+const line=lines[i].trim();
+if(!line)continue;
+if(/^(No\.|Chevaux|Rapport|Menu|Courses|Quinté|Aide|S'inscrire|Se connecter|\+ Plus d'infos|bet261)/i.test(line))continue;
+if(line.length<3)continue;
+if(horses.length>0&&/^[\d(][\d()apmDAT\s]+$/i.test(line)){
+const music=line.match(/[\d(][\d()apmDAT]{5,}/i);
+if(music&&horses[horses.length-1].music==="-")horses[horses.length-1].music=music[0];
+continue;
+}
+const numJockeyCote=line.match(/^(\d{1,2})\s+([A-ZÀ-Ü][\w'.\-]+)\s+(\d+(?:[.,]\d+)?)$/);
+if(numJockeyCote&&pendingName){
+horses.push({number:numJockeyCote[1],name:pendingName.toUpperCase(),jockey:numJockeyCote[2],cote:parseFloat(numJockeyCote[3].replace(",",".")),music:"-",trainer:"-",poids:0,corde:0,gains:0,sexeAge:"-",oeilleres:"-"});
+pendingName=null;continue;
+}
+const numJockey=line.match(/^(\d{1,2})\s+([A-ZÀ-Ü][\w'.\-]+)$/);
+if(numJockey&&pendingName){
+horses.push({number:numJockey[1],name:pendingName.toUpperCase(),jockey:numJockey[2],cote:0,music:"-",trainer:"-",poids:0,corde:0,gains:0,sexeAge:"-",oeilleres:"-"});
+pendingName=null;continue;
+}
+const justCote=line.match(/^(\d+(?:[.,]\d+)?)$/);
+if(justCote&&horses.length>0&&horses[horses.length-1].cote===0){
+horses[horses.length-1].cote=parseFloat(justCote[1].replace(",","."));continue;
+}
+if(/^[A-ZÀ-Ü][A-ZÀ-Ü\s'\-]{2,}$/.test(line)&&line===line.toUpperCase()){
+pendingName=line;
+}
+}
+return horses.sort((a,b)=>parseInt(a.number)-parseInt(b.number));
+}
+
+function mergeHorses(all){
+const map=new Map();
+all.forEach(h=>{if(!map.has(h.number))map.set(h.number,h);});
+return Array.from(map.values()).sort((a,b)=>parseInt(a.number)-parseInt(b.number));
+}
+
+function decodeMusique(music){
+const r={perfs:[],regularity:0,freshness:0,disqualif:0};
+if(!music||music==="-")return r;
+const regex=/(\d+)([apmDAT])/g;let m;
+while((m=regex.exec(music))!==null){r.perfs.push({place:parseInt(m[1]),letter:m[2].toUpperCase()});}
+if(r.perfs.length===0)return r;
+const rec=r.perfs.slice(0,5);
+r.regularity=rec.filter(p=>p.place>=1&&p.place<=3).length/rec.length;
+r.disqualif=rec.filter(p=>p.letter==="D"||p.letter==="T"||p.place===0).length;
+let fresh=0;rec.slice(0,3).forEach((p,i)=>{const w=(3-i)/3;let v=0;
+if(p.place===1)v=1;else if(p.place===2)v=0.85;else if(p.place===3)v=0.7;
+else if(p.place===4||p.place===5)v=0.5;else if(p.place>=6&&p.place<=9)v=0.3;
+else if(p.place===0)v=-0.5;fresh+=v*w;});
+r.freshness=Math.max(0,Math.min(1,fresh/2.55));
+return r;
+}
+
+function computeScores(horses){
+if(horses.length===0)return[];
+const cotes=horses.map(h=>h.cote||50).filter(c=>c>0);
+const minCote=Math.min(...cotes),maxCote=Math.max(...cotes);
+return horses.map(h=>{
+const cote=h.cote||50;
+const sCote=maxCote===minCote?0.5:1-(cote-minCote)/(maxCote-minCote);
+const d=decodeMusique(h.music);
+let sForme=0.5;
+if(d.perfs.length>0){
+let total=0,wSum=0;
+d.perfs.slice(0,5).forEach((p,i)=>{const w=(5-i)/5;let v=0;
+if(p.place===1)v=1;else if(p.place===2)v=0.85;else if(p.place===3)v=0.7;
+else if(p.place===4)v=0.55;else if(p.place===5)v=0.4;
+else if(p.place>=6&&p.place<=9)v=0.2;else if(p.place===0)v=-0.3;
+total+=v*w;wSum+=w;});
+sForme=wSum>0?Math.max(0,total/wSum):0;
+}
+let malus=0;
+if(d.disqualif>=2)malus+=0.3;
+if(cote<5&&d.freshness<0.2)malus+=0.4;
+const total=sCote*0.30+sForme*0.30+d.regularity*0.20+d.freshness*0.20-malus*0.20;
+const isTrapped=(cote<5&&d.freshness<0.2)||d.disqualif>=3;
+return{...h,scoreCote:Math.round(sCote*100),scoreForme:Math.round(sForme*100),
+scoreRegularite:Math.round(d.regularity*100),scoreFraicheur:Math.round(d.freshness*100),
+disqualifs:d.disqualif,isTrapped,score:Math.round(Math.max(0,Math.min(1,total))*100)};
+}).sort((a,b)=>b.score-a.score);
+}
+
+function renderHorses(horses){
+countBadge.textContent=horses.length;countBadge.style.display="inline-block";
+if(horses.length===0){horsesList.innerHTML='<div class="empty">Aucun cheval détecté.</div>';return;}
+horsesList.innerHTML=horses.map((h,idx)=>{
+const rankClass=idx<5?" top"+(idx+1):"";
+const rankBadge=idx<5?'<div class="rank-badge '+["gold","silver","bronze","",""][idx]+'">#'+(idx+1)+'</div>':"";
+const trapWarn=h.isTrapped?'<div style="color:#E53935;font-size:12px;font-weight:800;margin-top:6px">⚠️ PIÈGE DÉTECTÉ</div>':"";
+const extra=(h.poids||h.corde||h.sexeAge)?'<div class="info">Sexe/Âge : '+(h.sexeAge||"-")+' • Poids : '+(h.poids||"-")+'kg • Corde : '+(h.corde||"-")+'</div>':"";
+return'<div class="horse-card'+rankClass+'">'+rankBadge+
+'<div class="number-circle">'+h.number+'</div>'+
+'<div class="horse-info">'+
+'<div class="horse-name">'+h.name+'</div>'+
+'<div class="info">Jockey : '+h.jockey+'</div>'+
+'<div class="info">Cote : '+(h.cote||"-")+'</div>'+
+'<div class="info">Musique : '+h.music+'</div>'+
+extra+
+'<div class="info">Forme : '+h.scoreForme+'% • Régul. : '+h.scoreRegularite+'% • Fraîch. : '+h.scoreFraicheur+'%</div>'+
+trapWarn+
+'<div class="score-bar"><div class="score-fill" style="width:'+h.score+'%"></div></div>'+
+'<div class="score-text">Score global : '+h.score+'%</div>'+
+'</div></div>';
+}).join("");
+}
+
+function renderPronostic(horses){
+if(horses.length<5){pronosticSection.style.display="none";return;}
+const top5=horses.slice(0,5),comp=horses[5];
+pronosticSection.style.display="block";
+pronosticNumbers.innerHTML=top5.map((h,i)=>'<div class="pronum p'+(i+1)+'">'+h.number+'</div>').join("");
+const roles=["🥇 BASE","🥈 SOLIDE","🥉 RÉGULIER","🏅 OUTSIDER","⭐ COMPLÉMENT"];
+pronosticLegend.innerHTML=top5.map((h,i)=>'<div>'+roles[i]+' → <b>'+h.name+'</b> ('+h.score+'%)'+(h.isTrapped?" ⚠️":"")+'</div>').join("");
+if(comp){
